@@ -1,0 +1,114 @@
+
+
+
+
+public class Expense {
+    private String category;
+    private double amount;
+
+    public Expense(String category, double amount) {
+        this.category = category;
+        this.amount = amount;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+}
+  
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ExpenseTracker extends JFrame {
+
+    private ArrayList<Expense> expenses = new ArrayList<>();
+
+    public ExpenseTracker(String title) {
+        super(title);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(800, 600);
+        setLayout(new BorderLayout());
+
+        JPanel inputPanel = new JPanel(new FlowLayout());
+        JTextField categoryField = new JTextField(10);
+        JTextField amountField = new JTextField(10);
+        JButton addButton = new JButton("Add Expense");
+
+        inputPanel.add(new JLabel("Category:"));
+        inputPanel.add(categoryField);
+        inputPanel.add(new JLabel("Amount:"));
+        inputPanel.add(amountField);
+        inputPanel.add(addButton);
+
+        add(inputPanel, BorderLayout.NORTH);
+
+        ChartPanel chartPanel = new ChartPanel();
+        add(chartPanel, BorderLayout.CENTER);
+
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String category = categoryField.getText();
+                double amount = Double.parseDouble(amountField.getText());
+                addExpense(new Expense(category, amount));
+                chartPanel.repaint();
+            }
+        });
+    }
+
+    private void addExpense(Expense expense) {
+        expenses.add(expense);
+    }
+
+    private class ChartPanel extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            drawPieChart(g);
+        }
+
+        private void drawPieChart(Graphics g) {
+            Map<String, Double> expenseMap = new HashMap<>();
+            for (Expense expense : expenses) {
+                expenseMap.put(expense.getCategory(),
+                        expenseMap.getOrDefault(expense.getCategory(), 0.0) + expense.getAmount());
+            }
+
+            double total = expenseMap.values().stream().mapToDouble(Double::doubleValue).sum();
+            int startAngle = 0;
+
+            for (Map.Entry<String, Double> entry : expenseMap.entrySet()) {
+                double percentage = (entry.getValue() / total) * 100;
+                int arcAngle = (int) Math.round((percentage / 100) * 360);
+
+                g.setColor(getRandomColor(entry.getKey()));
+                g.fillArc(150, 100, 400, 400, startAngle, arcAngle);
+
+                startAngle += arcAngle;
+            }
+        }
+
+        private Color getRandomColor(String key) {
+            return new Color(key.hashCode() * 31 & 0xFFFFFF);
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ExpenseTracker tracker = new ExpenseTracker("Expense Tracker");
+                tracker.setVisible(true);
+            }
+        });
+    }
+}
